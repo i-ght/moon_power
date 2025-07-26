@@ -1,0 +1,82 @@
+from typing import Union, Literal
+import requests
+from datetime import datetime
+
+
+Product = Union[
+    Literal["water_level"],  # Preliminary or verified 6-minute interval water levels
+    Literal["hourly_height"],  # Verified hourly height water level data
+    Literal["high_low"],  # Verified high tide / low tide water level data
+    Literal["daily_mean"],  # Verified daily mean water level data (Great Lakes only)
+    Literal["Daily Maximum"],  # Verified daily maximum water level data
+    Literal["Daily Minimum"],  # Verified daily minimum water level data
+    Literal["monthly_mean"],  # Verified monthly mean water level data
+    Literal["one_minute_water_level"],  # Preliminary 1-minute interval water level data
+    Literal["predictions"],  # Water level / tide prediction data
+    Literal["datums"],  # Observed tidal datum values
+    Literal["air_gap"],  # Air Gap data
+    Literal["air_temperature"],  # Air temperature
+    Literal["water_temperature"],  # Water temperature
+    Literal["wind"],  # Wind speed, direction, and gusts
+    Literal["air_pressure"],  # Barometric pressure
+    Literal["conductivity"],  # Water's conductivity
+    Literal["visibility"],  # Visibility
+    Literal["humidity"],  # Relative humidity
+    Literal["salinity"],  # Salinity and specific gravity
+]
+
+def retrieve_data(
+    station_id: str,
+    product: Product,
+    begin_date: datetime = None,
+    end_date: datetime = None,
+    time_zone: str = "GMT"
+) -> dict:
+    """
+    Fetches data from NOAA Tides and Currents API
+    
+    Args:
+        station_id: NOAA station ID (e.g., "9414290" for San Francisco)
+        data_type: One of the supported data types
+        begin_date: Start date for data range
+        end_date: End date for data range
+        time_zone: "GMT" or "LST" (Local Standard Time)
+    
+    Returns:
+        Dictionary containing the API response
+    """
+    base_url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
+    
+    params = {
+        "station": station_id,
+        "product": product,
+        "units": "metric",
+        "time_zone": time_zone,
+        "application": "CSW",  # NOAA requests identifying your app
+        "format": "json"
+    }
+    
+    if begin_date and end_date:
+        params.update({
+            "begin_date": begin_date.strftime("%Y%m%d"),
+            "end_date": end_date.strftime("%Y%m%d")
+        })
+    elif product in ["predictions", "hourly_height"]:
+        # Default to 1 day if no date range provided for these types
+        # default_date = datetime.now().strftime("%Y%m%d")
+        params["date"] = "today"
+    
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()
+    
+    return response.json()
+
+# Example usage
+if __name__ == "__main__":
+    data = retrieve_data(
+        station_id="8729108",
+        product="air_pressure",  # Type checker will validate this
+        begin_date=datetime.now(),
+        end_date=datetime.now()
+    )
+    print(data)
