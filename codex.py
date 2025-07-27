@@ -25,12 +25,12 @@ Product = Union[
     Literal["salinity"],  # Salinity and specific gravity
 ]
 
-def retrieve_data(
+def con_data(
     station_id: str,
     product: Product,
-    begin_date: datetime = None,
-    end_date: datetime = None,
-    time_zone: str = "GMT"
+    # begin_date: datetime = None,
+    # end_date: datetime = None,
+    time_zone: str = "lst_ldt"
 ) -> dict:
     """
     Fetches data from NOAA Tides and Currents API
@@ -53,30 +53,57 @@ def retrieve_data(
         "units": "metric",
         "time_zone": time_zone,
         "application": "CSW",  # NOAA requests identifying your app
-        "format": "json"
+        "format": "json",
+        "date": "today",
+        "datum": "MLLW"
     }
     
-    if begin_date and end_date:
-        params.update({
-            "begin_date": begin_date.strftime("%Y%m%d"),
-            "end_date": end_date.strftime("%Y%m%d")
-        })
-    elif product in ["predictions", "hourly_height"]:
-        # Default to 1 day if no date range provided for these types
-        # default_date = datetime.now().strftime("%Y%m%d")
-        params["date"] = "today"
+    # if begin_date and end_date:
+    #     params.update({
+    #         "begin_date": begin_date.strftime("%Y%m%d"),
+    #         "end_date": end_date.strftime("%Y%m%d")
+    #     })
+    # elif product in ["predictions", "hourly_height"]:
+    #     # Default to 1 day if no date range provided for these types
+    #     # default_date = datetime.now().strftime("%Y%m%d")
+    #     params["date"] = "today"
     
     response = requests.get(base_url, params=params)
     response.raise_for_status()
     
     return response.json()
 
-# Example usage
+def con_air_pressure(station_id: str):
+    return con_data(
+        station_id=station_id,
+        product="air_pressure"
+    )["data"][-1]["v"]
+
+def con_water_level(station_id: str):
+    return con_data(
+        station_id=station_id,
+        product="water_level"
+    )["data"][-1]["v"]
+
+
+def con_tides(station_id: str):
+    return con_data(
+        station_id=station_id,
+        product="predictions"
+    )["data"][-1]["v"]
+
+
 if __name__ == "__main__":
-    data = retrieve_data(
-        station_id="8729108",
-        product="air_pressure",  # Type checker will validate this
-        begin_date=datetime.now(),
-        end_date=datetime.now()
-    )
+    panama_city = "8729108"
+    station_id = panama_city
+    air_pressure = con_air_pressure(station_id)
+    water_level = con_water_level(station_id)
+    tides = con_tides(station_id)
+    
+    data = {
+        "barometric_pressure": air_pressure,
+        "water_level": water_level,
+        "tides": tides
+    }
+
     print(data)
