@@ -1,3 +1,4 @@
+import pprint
 from typing import Union, Literal
 import requests
 from datetime import datetime
@@ -58,6 +59,10 @@ def con_data(
         "datum": "MLLW"
     }
     
+    match product:
+        case "predictions":
+            params.update([("interval", "hilo")])
+
     # if begin_date and end_date:
     #     params.update({
     #         "begin_date": begin_date.strftime("%Y%m%d"),
@@ -85,25 +90,56 @@ def con_water_level(station_id: str):
         product="water_level"
     )["data"][-1]["v"]
 
-
-def con_tides(station_id: str):
+def con_water_temp(station_id: str):
     return con_data(
         station_id=station_id,
-        product="predictions"
+        product="water_temperature"
     )["data"][-1]["v"]
 
+def con_air_temp(station_id: str):
+    return con_data(
+        station_id=station_id,
+        product="air_temperature"
+    )["data"][-1]["v"]
+
+def con_wind(station_id: str):
+    return con_data(
+        station_id=station_id,
+        product="wind"
+    )["data"][-1]["v"]
+
+def con_tides(station_id: str):
+    data = con_data(
+        station_id=station_id,
+        product="predictions"
+    )["predictions"]
+
+    data = {
+        "H": {"time": data[0]["t"], "water_level": data[0]["v"]},
+        "L": {"time": data[1]["t"], "water_level": data[1]["v"]}
+    }
+
+    return data
+
+# https://aa.usno.navy.mil/api/rstt/oneday?date=2025-07-27%20&coords=30.1588,%2085.6602&tz=6&dst=true
 
 if __name__ == "__main__":
     panama_city = "8729108"
     station_id = panama_city
     air_pressure = con_air_pressure(station_id)
     water_level = con_water_level(station_id)
+    water_temp = con_water_temp(station_id)
+    air_temp = con_air_temp(station_id)
     tides = con_tides(station_id)
+    # wind = con_wind(station_id)
     
     data = {
         "barometric_pressure": air_pressure,
         "water_level": water_level,
-        "tides": tides
+        "water_temp": water_temp,
+        "air_temperature": air_temp,
+        "tides": tides,
+        # "wind": wind
     }
 
-    print(data)
+    pprint.pprint(data)
