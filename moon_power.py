@@ -106,7 +106,7 @@ def con_wind(station_id: str):
     return con_data(
         station_id=station_id,
         product="wind"
-    )["data"][-1]["v"]
+    )["data"][-1]
 
 def con_tides(station_id: str):
     data = con_data(
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     water_temp = con_water_temp(station_id)
     air_temp = con_air_temp(station_id)
     tides = con_tides(station_id)
-    # wind = con_wind(station_id)
+    wind = con_wind(station_id)
     
     data = {
         "barometric_pressure": air_pressure,
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         "water_temp": water_temp,
         "air_temperature": air_temp,
         "tides": tides,
-        # "wind": wind
+        "wind": wind
     }
 
     pprint.pprint(data)
